@@ -3,7 +3,7 @@ function selected_idx = adaselect(features, labels, num_select)
 % labels: m by 1 label vector, each row is an instance
 % num_select: scalar, number of features to selected_idx
 
-assert(size(features, 2) <= num_select); % select a subset of features, for sure
+assert(size(features, 2) >= num_select); % select a subset of features, for sure
 assert(size(features, 1) == size(labels, 1)); % labels and features should match
 assert(any(labels == 0) & any(labels == 1)); % there must be both positive samples and negative samples
 
@@ -21,7 +21,9 @@ candidate_idx = 1:num_feature; %candidate index. making an entry zero means it h
 selected_idx = zeros(1, num_select); % selected index
 
 for t = 1:T %T rounds for T selected features index
-	w(t, :) = w(t, :) * / sum(w(t,:)) % normalization
+    t
+    tic
+	w(t, :) = w(t, :)  / sum(w(t,:)); % normalization
 
 	best_err = Inf; 
 	best_predicted = 0; %just declare 
@@ -32,7 +34,7 @@ for t = 1:T %T rounds for T selected features index
 			continue; %ignore features that have already been selected
 		end
 		predicted = weak_classifier(features(:, j), labels); %get weak classifier trained on the j-th feature dimension
-		err = w(t, :).*abs(predicted - labels); % calculate the weighted error
+		err = w(t, :)*abs(predicted - labels); % calculate the weighted error
 		if err < best_err %update best error rate
 			best_err = err; %lowest error
 			best_predicted = predicted; % best predicted output label
@@ -40,14 +42,14 @@ for t = 1:T %T rounds for T selected features index
 		end
 	end
 	w(t + 1, :) = w(t, :) * bsxfun(@power, best_err / (1 - best_err), (best_predicted == labels)); % update the weights. beta = best_err / ( 1 - best_err)
-	selected_idx(t) = j;
+	selected_idx(t) = best_idx;
 	candidate_idx(t) = -1;
-
+    toc;
 end %end of for
 end %function end
 
 function out_label = weak_classifier(feature, labels)
-	assert(size(feature) == size(labels));
+	assert(all(size(feature) == size(labels)));
 	assert(size(feature, 2) == 1);
 	pos_mean = mean(feature(labels == 1));
 	neg_mean = mean(feature(labels == 0));
@@ -57,5 +59,5 @@ function out_label = weak_classifier(feature, labels)
 		out_label(feature > th) = 1;
 	else
 		out_label(feature < th) = 1;
-	end
+    end
 end
